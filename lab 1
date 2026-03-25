@@ -1,0 +1,86 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Đọc dữ liệu từ file csv
+df = pd.read_csv('ITA105_Lab_1.csv')
+
+# --- BÀI 1: KHÁM PHÁ DỮ LIỆU (1đ) ---
+print("--- Bài 1: Khám phá dữ liệu ---")
+# Kiểm tra kích thước dữ liệu (số dòng và cột)
+print(f"Kích thước dữ liệu: {df.shape}")
+
+# Xem thống kê mô tả của các cột số
+print("\nThống kê mô tả các cột số:")
+print(df.describe())
+
+# Kiểm tra giá trị thiếu trong các cột
+print("\nSố lượng giá trị thiếu trong mỗi cột:")
+print(df.isnull().sum())
+print("-" * 30)
+
+
+# --- BÀI 2: XỬ LÝ DỮ LIỆU THIẾU (2đ) ---
+print("\n--- Bài 2: Xử lý dữ liệu thiếu ---")
+# 1. Dùng .isnull().sum() đã thực hiện ở Bài 1
+
+# 2. Điền giá trị thiếu (Ví dụ điền cột Price bằng Mean, Rating bằng Median)
+df['Price'] = df['Price'].fillna(df['Price'].mean())
+df['Rating'] = df['Rating'].fillna(df['Rating'].median())
+# Đối với các cột phân loại như Category, có thể dùng Mode
+if df['Category'].isnull().any():
+    df['Category'] = df['Category'].fillna(df['Category'].mode()[0])
+
+# 3. So sánh kết quả với phương pháp dropna()
+df_dropped = pd.read_csv('ITA105_Lab_1.csv').dropna()
+print(f"Số dòng sau khi điền (fillna): {len(df)}")
+print(f"Số dòng nếu xóa bỏ (dropna): {len(df_dropped)}")
+print("-" * 30)
+
+
+# --- BÀI 3: XỬ LÝ DỮ LIỆU LỖI (2đ) ---
+print("\n--- Bài 3: Xử lý dữ liệu lỗi ---")
+# Kiểm tra và xử lý giá trị bất hợp lý (Giá và số lượng không thể âm)
+# Thay thế các giá trị âm bằng giá trị tuyệt đối hoặc 0
+df['Price'] = df['Price'].abs()
+df['StockQuantity'] = df['StockQuantity'].apply(lambda x: x if x >= 0 else 0)
+
+# Lọc các giá trị không hợp lệ trong cột Rating (giả sử thang điểm từ 0 đến 5)
+df = df[(df['Rating'] >= 0) & (df['Rating'] <= 5)]
+print("Đã xử lý xong các giá trị bất hợp lý và lọc Rating.")
+print("-" * 30)
+
+
+# --- BÀI 4: LÀM MƯỢT DỮ LIỆU NHIỄU (1đ) ---
+# Áp dụng Moving Average (Chu kỳ 3) để làm mượt cột Price
+df['Price_Smoothed'] = df['Price'].rolling(window=3, min_periods=1).mean()
+
+# Vẽ biểu đồ line trước và sau khi làm mượt
+plt.figure(figsize=(12, 6))
+plt.plot(df.index[:50], df['Price'][:50], label='Gốc (Original)', alpha=0.5, marker='o')
+plt.plot(df.index[:50], df['Price_Smoothed'][:50], label='Làm mượt (Moving Average)', color='red', linewidth=2)
+plt.title('So sánh dữ liệu Price trước và sau khi làm mượt (50 dòng đầu)')
+plt.xlabel('Index')
+plt.ylabel('Price')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+# --- BÀI 5: CHUẨN HÓA DỮ LIỆU (1đ) ---
+print("\n--- Bài 5: Chuẩn hóa dữ liệu ---")
+# Chuyển tất cả giá trị trong cột Category thành chữ thường
+df['Category'] = df['Category'].str.lower()
+
+# Loại bỏ ký tự thừa trong cột Description
+df['Description'] = df['Description'].str.strip()
+
+# Chuyển đổi đơn vị giá từ USD sang VND (Giả sử 1 USD = 25,000 VND)
+df['Price_VND'] = df['Price'] * 25000
+
+print("Dữ liệu sau khi chuẩn hóa (5 dòng đầu):")
+print(df[['Category', 'Description', 'Price', 'Price_VND']].head())
+print("-" * 30)
+
+# Lưu lại kết quả sau khi xử lý
+# df.to_csv('ITA105_Lab_1_Processed.csv', index=False)
